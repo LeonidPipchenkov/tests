@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserServiceTest {
 
@@ -62,6 +64,38 @@ class UserServiceTest {
                 .hasSize(2)
                 .extracting(UserDTO::getType)
                 .containsExactlyInAnyOrder(UserType.ADMIN, UserType.MODERATOR);
+    }
+
+    @Test
+    void testWithDesc() {
+        final UserDTO dto = userService.getAllUsers().get(0);
+        assertThat(dto.getAge())
+                .as("Checking the age of user with name %s failed", dto.getName())
+                .isEqualTo(21); // Change to some other value to see the description
+    }
+
+    @Test
+    void testWithErrorMessageOverride() {
+        final UserDTO dto = userService.getAllUsers().get(0);
+        final int expectedAge = 21;
+        assertThat(dto.getAge())
+                .withFailMessage("Users age should be %s", expectedAge)
+                .isEqualTo(expectedAge);
+    }
+
+    @Test
+    void testExceptions() {
+        assertThatThrownBy(() -> {
+            UserDTO dto = userService.getAllUsers().get(55);
+        }).isInstanceOf(IndexOutOfBoundsException.class)
+                .hasMessageContaining("Index 55")
+                .hasMessage("Index 55 out of bounds for length 3")
+                .hasMessageStartingWith("Index 55 out")
+                .hasMessageEndingWith("length 3")
+                .hasStackTraceContaining("java.lang.ArrayIndexOutOfBoundsException");
+        assertThatCode(() -> {
+            UserDTO dto = userService.getAllUsers().get(1);
+        }).doesNotThrowAnyException();
     }
 
 }
