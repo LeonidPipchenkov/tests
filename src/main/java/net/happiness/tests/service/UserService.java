@@ -1,40 +1,56 @@
 package net.happiness.tests.service;
 
 import net.happiness.tests.dto.UserDTO;
+import net.happiness.tests.dto.UserInfoDTO;
 import net.happiness.tests.dto.UserType;
+import net.happiness.tests.helper.UserProviderHelper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
-    private static List<UserDTO> USERS = List.of(
-            new UserDTO(UUID.randomUUID().toString(), "James Bond", "007", 21, UserType.ADMIN),
-            new UserDTO(UUID.randomUUID().toString(), "Frank Castle", "punisher", 40, UserType.MODERATOR),
-            new UserDTO(UUID.randomUUID().toString(), "T Pain", "MrT", 46, UserType.USER)
-    );
+    private UserInfoService userInfoService;
+
+    @Autowired
+    public UserService(UserInfoService userInfoService) {
+        this.userInfoService = userInfoService;
+    }
 
     public String helloWorld() {
         return "hello world";
     }
 
     public List<String> getAllUserNames() {
-        return USERS.stream()
+        return UserProviderHelper.getUsers().stream()
                 .map(UserDTO::getName)
                 .collect(Collectors.toList());
     }
 
     public List<UserDTO> getAllAdminOrModUsers() {
-        return USERS.stream()
+        return UserProviderHelper.getUsers().stream()
                 .filter(x -> x.getType() != UserType.USER)
                 .collect(Collectors.toList());
     }
 
+    public List<UserInfoDTO> getUserInfos(final List<String> userIds) {
+        if (CollectionUtils.isEmpty(userIds)) {
+            return Collections.emptyList();
+        }
+        return userIds.stream()
+                .map(id -> userInfoService.getUserInfo(id))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     public List<UserDTO> getAllUsers() {
-        return USERS;
+        return UserProviderHelper.getUsers();
     }
 
 }
