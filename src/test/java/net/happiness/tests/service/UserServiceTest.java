@@ -5,8 +5,10 @@ import net.happiness.tests.dto.UserInfoDTO;
 import net.happiness.tests.dto.UserType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -137,11 +140,44 @@ class UserServiceTest {
     @Test
     void testGetUserInfosWithSpy() {
         final List<UserDTO> allUsers = userServiceWithSpy.getAllUsers();
+        String id1 = allUsers.get(1).getId();
+        String id2 = "not-there";
 
-        final List<UserInfoDTO> userInfos = userServiceWithSpy.getUserInfos(List.of(allUsers.get(1).getId(), "not-there"));
+        final List<UserInfoDTO> userInfos = userServiceWithSpy.getUserInfos(List.of(id1, id2));
 
         assertThat(userInfos).hasSize(1);
-        verify(userInfoServiceSpy, times(2)).getUserInfo(anyString());
+        final ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        verify(userInfoServiceSpy, times(2)).getUserInfo(argumentCaptor.capture());
+        final List<String> captureIds = argumentCaptor.getAllValues();
+        assertThat(captureIds).containsExactlyInAnyOrder(id1, id2);
+    }
+
+    @Test
+    void testGetUserInfosVerifications() {
+        final String id = "anything";
+
+        final List<UserInfoDTO> userInfos = userServiceWithMock.getUserInfos(Collections.singletonList(id));
+
+        assertThat(userInfos).hasSize(1);
+        final ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        verify(userInfoServiceMock).getUserInfo(argumentCaptor.capture());
+        final String actualValue = argumentCaptor.getValue();
+        assertThat(actualValue).isEqualTo(id);
+    }
+
+    @Test
+    void testGetUserInfosVerifications_ActualValue() {
+        final String id = "anything";
+
+        final List<UserInfoDTO> userInfos = userServiceWithMock.getUserInfos(Collections.singletonList(id));
+
+        assertThat(userInfos).hasSize(1);
+        verify(userInfoServiceMock).getUserInfo(id);
+    }
+
+    @Test
+    void testGetUserInfosVerifications_NotCalled() {
+        verify(userInfoServiceMock, never()).getUserInfo(anyString());
     }
 
 }
